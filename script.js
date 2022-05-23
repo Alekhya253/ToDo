@@ -1,27 +1,140 @@
-/*
-This is your site JavaScript code - you can add interactivity and carry out processing
-- Initially the JS writes a message to the console, and moves a button you can add from the README
-*/
+let todoItemsContainer = document.getElementById("todoItemsContainer");
+let addTodoButton = document.getElementById("addTodoButton");
+let saveTodoButton = document.getElementById("saveTodoButton");
 
-// Print a message in the browser's dev tools console each time the page loads
-// Use your menus or right-click / control-click and choose "Inspect" > "Console"
-console.log("Hello 🌎");
-
-/* 
-Make the "Click me!" button move when the visitor clicks it:
-- First add the button to the page by following the "Next steps" in the README
-*/
-const btn = document.querySelector("button"); // Get the button from the page
-// Detect clicks on the button
-if (btn) {
-  btn.onclick = function() {
-    // The JS works in conjunction with the 'dipped' code in style.css
-    btn.classList.toggle("dipped");
-  };
+function getTodoListFromLocalStorage() {
+  let stringifiedTodoList = localStorage.getItem("todoList");
+  let parsedTodoList = JSON.parse(stringifiedTodoList);
+  if (parsedTodoList === null) {
+    return [];
+  } else {
+    return parsedTodoList;
+  }
 }
 
-// This is a single line JS comment
-/*
-This is a comment that can span multiple lines 
-- use comments to make your own notes!
-*/
+let todoList = getTodoListFromLocalStorage();
+let todosCount = todoList.length;
+
+saveTodoButton.onclick = function() {
+  localStorage.setItem("todoList", JSON.stringify(todoList));
+};
+
+function onAddTodo() {
+  let userInputElement = document.getElementById("todoUserInput");
+  let userInputValue = userInputElement.value;
+
+  if (userInputValue === "") {
+    alert("Enter Valid Text");
+    return;
+  }
+
+  todosCount = todosCount + 1;
+
+  let newTodo = {
+    text: userInputValue,
+    uniqueNo: todosCount,
+    isChecked: false
+  };
+  todoList.push(newTodo);
+  createAndAppendTodo(newTodo);
+  userInputElement.value = "";
+}
+
+addTodoButton.onclick = function() {
+  onAddTodo();
+};
+
+function onTodoStatusChange(checkboxId, labelId, todoId) {
+  let checkboxElement = document.getElementById(checkboxId);
+  let labelElement = document.getElementById(labelId);
+  labelElement.classList.toggle("checked");
+
+  let todoObjectIndex = todoList.findIndex(function(eachTodo) {
+    let eachTodoId = "todo" + eachTodo.uniqueNo;
+
+    if (eachTodoId === todoId) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+
+  let todoObject = todoList[todoObjectIndex];
+
+  if(todoObject.isChecked === true){
+    todoObject.isChecked = false;
+  } else {
+    todoObject.isChecked = true;
+  }
+
+}
+
+function onDeleteTodo(todoId) {
+  let todoElement = document.getElementById(todoId);
+  todoItemsContainer.removeChild(todoElement);
+
+  let deleteElementIndex = todoList.findIndex(function(eachTodo) {
+    let eachTodoId = "todo" + eachTodo.uniqueNo;
+    if (eachTodoId === todoId) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+
+  todoList.splice(deleteElementIndex, 1);
+}
+
+function createAndAppendTodo(todo) {
+  let todoId = "todo" + todo.uniqueNo;
+  let checkboxId = "checkbox" + todo.uniqueNo;
+  let labelId = "label" + todo.uniqueNo;
+
+  let todoElement = document.createElement("li");
+  todoElement.classList.add("todo-item-container", "d-flex", "flex-row");
+  todoElement.id = todoId;
+  todoItemsContainer.appendChild(todoElement);
+
+  let inputElement = document.createElement("input");
+  inputElement.type = "checkbox";
+  inputElement.id = checkboxId;
+  inputElement.checked = todo.isChecked;
+
+  inputElement.onclick = function () {
+    onTodoStatusChange(checkboxId, labelId, todoId);
+  };
+
+  inputElement.classList.add("checkbox-input");
+  todoElement.appendChild(inputElement);
+
+  let labelContainer = document.createElement("div");
+  labelContainer.classList.add("label-container", "d-flex", "flex-row");
+  todoElement.appendChild(labelContainer);
+
+  let labelElement = document.createElement("label");
+  labelElement.setAttribute("for", checkboxId);
+  labelElement.id = labelId;
+  labelElement.classList.add("checkbox-label");
+  labelElement.textContent = todo.text;
+  if (todo.isChecked === true) {
+    labelElement.classList.add("checked");
+  }
+  labelContainer.appendChild(labelElement);
+
+  let deleteIconContainer = document.createElement("div");
+  deleteIconContainer.classList.add("delete-icon-container");
+  labelContainer.appendChild(deleteIconContainer);
+
+  let deleteIcon = document.createElement("i");
+  deleteIcon.classList.add("far", "fa-trash-alt", "delete-icon");
+
+  deleteIcon.onclick = function () {
+    onDeleteTodo(todoId);
+  };
+
+  deleteIconContainer.appendChild(deleteIcon);
+}
+
+for (let todo of todoList) {
+  createAndAppendTodo(todo);
+}
